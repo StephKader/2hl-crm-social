@@ -7,13 +7,14 @@ import { usePathname } from "next/navigation";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isConversationPage = pathname.startsWith("/conversations");
+  // Seule la page de détail conversation (avec un ID) masque le Header et collapse le sidebar
+  const isConversationDetail = /^\/conversations\/.+/.test(pathname);
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar collapsed={isConversationPage} />
+      <Sidebar collapsed={isConversationDetail} />
       <div className="flex-1 flex flex-col min-w-0">
-        {!isConversationPage && <Header />}
+        {!isConversationDetail && <Header />}
         <main className="flex-1">{children}</main>
       </div>
       <MobileBottomNav />

@@ -37,8 +37,11 @@ Navigation items in `src/lib/constants.ts` (`NAV_ITEMS`) define which roles can 
 ### Layout System
 
 The `(app)/layout.tsx` renders:
-- **Desktop (≥1280px)**: Sidebar (left) + Header (top) + content area. Sidebar collapses to icons on conversation detail pages.
+- **Desktop (≥1280px)**: Sidebar (left) + Header (top) + content area. Sidebar collapses to icons on conversation **detail** pages only (`/conversations/[id]`).
 - **Mobile (<1280px)**: Header (top) + content + MobileBottomNav (fixed bottom). Breakpoint detection via `useMediaQuery("(min-width: 1280px)")` custom hook.
+- **Header visibility**: Hidden only on conversation detail pages (which have their own chat header). The conversation list page (`/conversations`) keeps the main Header to avoid layout shifts on mobile.
+
+The `MobileBottomNav` shows the first 3 nav items as direct tabs. If the role has more items, a "Plus" button opens a popover menu listing all remaining pages (e.g., Catégories + Rapports for Patron, + Paramètres for Admin).
 
 Conversation detail page (`conversations/[id]/page.tsx`) manages its own layout with `CustomerProfile` as an inline panel (desktop) or Sheet (mobile).
 
@@ -48,8 +51,11 @@ Conversation detail page (`conversations/[id]/page.tsx`) manages its own layout 
 - **State**: React Context (auth) + local `useState` per component. No external state library.
 - **Icons**: Google Material Symbols Outlined (loaded via `<link>` in root layout), not Lucide for app icons
 - **Toast notifications**: `sonner` for user feedback on placeholder/demo buttons — import `toast` from `"sonner"`
-- **Styling**: Tailwind CSS v4 + CSS variables for theming (`globals.css`). shadcn/ui components in `src/components/ui/`.
+- **Styling**: Tailwind CSS v4 + CSS variables for theming (`globals.css`). shadcn/ui components in `src/components/ui/`. Avoid dynamic Tailwind classes like `bg-${color}-100` — use static mappings or inline styles instead.
 - **Viewport height**: Use `h-[100dvh]` not `h-screen` for mobile-safe full-height layouts
+- **Interactive features**: Chat supports message sending with simulated auto-replies. Global search (`Ctrl+K`) filters conversations/contacts. Report charts respond to period selection. Contact editing via Sheet panel.
+- **Error handling**: Custom 404 page (`src/app/not-found.tsx`), error boundary (`src/app/(app)/error.tsx`), loading skeleton (`src/app/(app)/loading.tsx`)
+- **Accessibility**: All icon-only buttons have `aria-label` and `title` attributes
 
 ## Key Files
 
