@@ -4,7 +4,7 @@ import { Conversation } from "@/lib/types";
 import { DEFAULT_INTENTIONS } from "@/lib/constants";
 import { AISummary } from "./AISummary";
 import { InternalNotes } from "./InternalNotes";
-import { MOCK_INTERNAL_NOTES } from "@/lib/mock-data";
+import type { InternalNote } from "@/lib/types";
 
 interface CustomerProfileProps {
   conversation: Conversation;
@@ -101,7 +101,7 @@ export function CustomerProfile({ conversation }: CustomerProfileProps) {
         )}
 
         {/* Internal Notes */}
-        <InternalNotes notes={MOCK_INTERNAL_NOTES} />
+        <InternalNotes notes={[] as InternalNote[]} />
       </div>
     </aside>
   );

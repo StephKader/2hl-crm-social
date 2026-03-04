@@ -6,7 +6,7 @@ export type ConversationStatus = "active" | "pending" | "resolved" | "unattended
 
 export type MessageType = "text" | "image" | "voice" | "document" | "video";
 
-export type Priority = "low" | "normal" | "high" | "urgent";
+export type Priority = "low" | "medium" | "normal" | "high" | "urgent";
 
 export interface User {
   id: string;
@@ -55,7 +55,7 @@ export interface Message {
   sender: "client" | "commercial";
   senderName: string;
   timestamp: string;
-  status?: "sent" | "delivered" | "read";
+  status?: "sent" | "delivered" | "read" | "failed";
   fileUrl?: string;
   fileName?: string;
   fileSize?: string;
@@ -74,7 +74,8 @@ export interface Conversation {
   unreadCount: number;
   assignedTo?: User;
   intention?: Intention;
-  messages: Message[];
+  messages?: Message[];
+  labels?: Label[];
   aiSummary?: string;
   priority?: Priority;
 }

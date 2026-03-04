@@ -30,7 +30,7 @@ export function Sidebar({ collapsed = false }: SidebarProps) {
         </div>
         {!collapsed && (
           <div>
-            <h1 className="font-bold text-lg leading-tight">2HL CRM</h1>
+            <h1 className="font-bold text-lg leading-tight">NEXIA CRM</h1>
             <p className="text-xs text-slate-500 font-medium">Social</p>
           </div>
         )}

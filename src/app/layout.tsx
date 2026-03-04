@@ -13,8 +13,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "2HL CRM Social",
-  description: "CRM Social de 2HL GROUP pour la gestion des conversations multicanal",
+  title: "NEXIA CRM Social",
+  description: "CRM Social de NEXIA pour la gestion des conversations multicanal",
 };
 
 export default function RootLayout({

@@ -6,14 +6,29 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    router.push("/dashboard");
+    setError("");
+    try {
+      setIsLoading(true);
+      await login(email, password);
+      router.push("/dashboard");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erreur de connexion");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -28,19 +43,25 @@ export default function LoginPage() {
             />
           </svg>
         </div>
-        <h2 className="text-slate-900 dark:text-slate-100 text-2xl font-bold tracking-tight">2HL GROUP</h2>
+        <h2 className="text-slate-900 dark:text-slate-100 text-2xl font-bold tracking-tight">NEXIA</h2>
       </div>
 
       {/* Login Card */}
       <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-800 p-8">
         <div className="text-center mb-8">
           <h1 className="text-slate-900 dark:text-slate-100 text-2xl font-bold leading-tight">
-            Bienvenue sur 2HL CRM
+            Bienvenue sur NEXIA CRM
           </h1>
           <p className="text-slate-500 dark:text-slate-400 mt-2">
             Connectez-vous pour accéder à votre tableau de bord
           </p>
         </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 text-sm">
+            {error}
+          </div>
+        )}
 
         <form className="space-y-6" onSubmit={handleSubmit}>
           {/* Email */}
@@ -49,8 +70,11 @@ export default function LoginPage() {
             <Input
               type="email"
               placeholder="votre@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-3 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary"
               required
+              disabled={isLoading}
             />
           </div>
 
@@ -61,8 +85,11 @@ export default function LoginPage() {
               <Input
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-4 py-3 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-primary pr-12"
                 required
+                disabled={isLoading}
               />
               <button
                 type="button"
@@ -95,9 +122,10 @@ export default function LoginPage() {
           {/* Submit */}
           <Button
             type="submit"
-            className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3.5 px-4 rounded-lg shadow-lg shadow-primary/20 transition-all active:scale-[0.98] h-auto"
+            disabled={isLoading}
+            className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3.5 px-4 rounded-lg shadow-lg shadow-primary/20 transition-all active:scale-[0.98] h-auto disabled:opacity-60"
           >
-            Se connecter
+            {isLoading ? "Connexion en cours..." : "Se connecter"}
           </Button>
         </form>
 

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { MOCK_CONTACTS } from "@/lib/mock-data";
+import { useState, useEffect } from "react";
+import { useContacts } from "@/hooks/useContacts";
 import { CHANNEL_CONFIG } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,18 +13,19 @@ import { Contact } from "@/lib/types";
 import { toast } from "sonner";
 
 export default function ContactsPage() {
-  const [contacts, setContacts] = useState<Contact[]>(MOCK_CONTACTS);
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", phone: "", email: "", company: "" });
 
-  const filtered = contacts.filter(
-    (c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.phone.includes(search) ||
-      (c.email && c.email.toLowerCase().includes(search.toLowerCase()))
-  );
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const { contacts, isLoading, mutate } = useContacts(debouncedSearch || undefined);
 
   const startEditing = () => {
     if (!selectedContact) return;
@@ -37,19 +38,28 @@ export default function ContactsPage() {
     setIsEditing(true);
   };
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (!selectedContact) return;
-    const updated: Contact = {
-      ...selectedContact,
-      name: editForm.name,
-      phone: editForm.phone,
-      email: editForm.email || undefined,
-      company: editForm.company || undefined,
-    };
-    setContacts((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
-    setSelectedContact(updated);
-    setIsEditing(false);
-    toast.success("Contact mis à jour");
+    try {
+      const res = await fetch(`/api/chatwoot/contacts/${selectedContact.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editForm.name,
+          phone_number: editForm.phone,
+          email: editForm.email || null,
+          custom_attributes: { company: editForm.company || undefined },
+        }),
+      });
+      if (!res.ok) throw new Error('Erreur de mise à jour');
+      const updated = await res.json();
+      setSelectedContact(updated);
+      setIsEditing(false);
+      mutate();
+      toast.success("Contact mis à jour");
+    } catch {
+      toast.error("Erreur lors de la mise à jour");
+    }
   };
 
   const cancelEdit = () => {
@@ -67,7 +77,7 @@ export default function ContactsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-3xl font-black tracking-tight">Contacts</h2>
-          <p className="text-slate-500 mt-1">{contacts.length} contacts au total</p>
+          <p className="text-slate-500 mt-1">{contacts.length} contacts</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" className="text-sm" onClick={() => toast.info("Fonctionnalité bientôt disponible")}>
@@ -94,85 +104,65 @@ export default function ContactsPage() {
 
       {/* Table */}
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 text-xs font-bold uppercase tracking-wider">
-                <th className="px-6 py-4">Contact</th>
-                <th className="px-6 py-4">Téléphone</th>
-                <th className="px-6 py-4">Canaux</th>
-                <th className="px-6 py-4">Intention</th>
-                <th className="px-6 py-4">Labels</th>
-                <th className="px-6 py-4">Dernière activité</th>
-                <th className="px-6 py-4">Conv.</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {filtered.map((contact) => {
-                const initials = contact.name.split(" ").map((n) => n[0]).join("");
-                return (
-                  <tr
-                    key={contact.id}
-                    onClick={() => { setSelectedContact(contact); setIsEditing(false); }}
-                    className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer"
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="size-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold shrink-0">
-                          {initials}
+        {isLoading ? (
+          <div className="p-12 text-center">
+            <p className="text-sm text-slate-500">Chargement des contacts...</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 text-xs font-bold uppercase tracking-wider">
+                  <th className="px-6 py-4">Contact</th>
+                  <th className="px-6 py-4">Téléphone</th>
+                  <th className="px-6 py-4">Labels</th>
+                  <th className="px-6 py-4">Dernière activité</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                {contacts.map((contact) => {
+                  const initials = contact.name.split(" ").map((n) => n[0]).join("");
+                  return (
+                    <tr
+                      key={contact.id}
+                      onClick={() => { setSelectedContact(contact); setIsEditing(false); }}
+                      className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors cursor-pointer"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="size-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold shrink-0">
+                            {initials}
+                          </div>
+                          <div>
+                            <span className="text-sm font-bold block">{contact.name}</span>
+                            {contact.company && (
+                              <span className="text-xs text-slate-400">{contact.company}</span>
+                            )}
+                          </div>
                         </div>
-                        <div>
-                          <span className="text-sm font-bold block">{contact.name}</span>
-                          {contact.company && (
-                            <span className="text-xs text-slate-400">{contact.company}</span>
+                      </td>
+                      <td className="px-6 py-4 text-sm">{contact.phone}</td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1">
+                          {contact.labels.slice(0, 2).map((lbl) => (
+                            <span key={lbl.id} className="px-2 py-0.5 rounded text-[10px] font-medium" style={{ backgroundColor: `${lbl.color}15`, color: lbl.color }}>
+                              {lbl.name}
+                            </span>
+                          ))}
+                          {contact.labels.length > 2 && (
+                            <span className="text-[10px] text-slate-400">+{contact.labels.length - 2}</span>
                           )}
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm">{contact.phone}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-1">
-                        {contact.channels.map((ch) => (
-                          <span
-                            key={ch}
-                            className={`material-symbols-outlined text-sm filled-icon ${ch === "whatsapp" ? "text-green-500" : "text-blue-500"}`}
-                          >
-                            {CHANNEL_CONFIG[ch].icon}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {contact.intention && (
-                        <span
-                          className="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
-                          style={{ backgroundColor: `${contact.intention.color}15`, color: contact.intention.color }}
-                        >
-                          {contact.intention.name.split(" ").slice(-1)[0]}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-1">
-                        {contact.labels.slice(0, 2).map((lbl) => (
-                          <span key={lbl.id} className="px-2 py-0.5 rounded text-[10px] font-medium" style={{ backgroundColor: `${lbl.color}15`, color: lbl.color }}>
-                            {lbl.name}
-                          </span>
-                        ))}
-                        {contact.labels.length > 2 && (
-                          <span className="text-[10px] text-slate-400">+{contact.labels.length - 2}</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-500">{contact.lastActivity}</td>
-                    <td className="px-6 py-4 text-sm font-medium">{contact.conversationCount}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        {filtered.length === 0 && (
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-500">{contact.lastActivity}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {!isLoading && contacts.length === 0 && (
           <div className="p-12 text-center">
             <span className="material-symbols-outlined text-5xl text-slate-300 dark:text-slate-600 mb-3 block">person_off</span>
             <p className="text-sm text-slate-500 font-medium">Aucun contact trouvé</p>
@@ -199,40 +189,22 @@ export default function ContactsPage() {
               </SheetHeader>
               <div className="mt-6 space-y-6">
                 {isEditing ? (
-                  /* Edit Mode */
                   <div className="space-y-4">
                     <div>
                       <Label>Nom complet</Label>
-                      <Input
-                        className="mt-1"
-                        value={editForm.name}
-                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                      />
+                      <Input className="mt-1" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
                     </div>
                     <div>
                       <Label>Téléphone</Label>
-                      <Input
-                        className="mt-1"
-                        value={editForm.phone}
-                        onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                      />
+                      <Input className="mt-1" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
                     </div>
                     <div>
                       <Label>Email</Label>
-                      <Input
-                        className="mt-1"
-                        type="email"
-                        value={editForm.email}
-                        onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                      />
+                      <Input className="mt-1" type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} />
                     </div>
                     <div>
                       <Label>Entreprise</Label>
-                      <Input
-                        className="mt-1"
-                        value={editForm.company}
-                        onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
-                      />
+                      <Input className="mt-1" value={editForm.company} onChange={(e) => setEditForm({ ...editForm, company: e.target.value })} />
                     </div>
                     <div className="flex gap-2 pt-2">
                       <Button onClick={saveEdit} className="flex-1">
@@ -245,22 +217,14 @@ export default function ContactsPage() {
                     </div>
                   </div>
                 ) : (
-                  /* View Mode */
                   <>
                     <div className="text-center">
                       <div className="size-20 rounded-full mx-auto mb-3 bg-primary/20 flex items-center justify-center text-primary font-bold text-xl">
                         {selectedContact.name.split(" ").map((n) => n[0]).join("")}
                       </div>
-                      {selectedContact.title && selectedContact.company && (
-                        <p className="text-sm text-slate-500">{selectedContact.title} @ {selectedContact.company}</p>
+                      {selectedContact.company && (
+                        <p className="text-sm text-slate-500">{selectedContact.company}</p>
                       )}
-                      <div className="flex justify-center gap-2 mt-3">
-                        {selectedContact.channels.map((ch) => (
-                          <span key={ch} className={`px-2 py-1 rounded text-xs font-bold uppercase ${ch === "whatsapp" ? "bg-green-100 text-green-600" : "bg-blue-100 text-blue-600"}`}>
-                            {ch}
-                          </span>
-                        ))}
-                      </div>
                     </div>
 
                     <div className="space-y-3">
@@ -277,10 +241,6 @@ export default function ContactsPage() {
                       <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
                         <span className="material-symbols-outlined text-xl">calendar_today</span>
                         Client depuis le {selectedContact.firstContact}
-                      </div>
-                      <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-                        <span className="material-symbols-outlined text-xl">chat</span>
-                        {selectedContact.conversationCount} conversations
                       </div>
                     </div>
 

@@ -6,7 +6,7 @@ import {
   PieChart, Pie, Cell, LineChart, Line,
 } from "recharts";
 import { Button } from "@/components/ui/button";
-import { MOCK_AGENT_PERFORMANCE } from "@/lib/mock-data";
+import type { AgentPerformance } from "@/lib/types";
 import { toast } from "sonner";
 
 const BASE_CONVERSATION_DATA = [
@@ -211,7 +211,7 @@ export default function ReportsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {MOCK_AGENT_PERFORMANCE.map((row, i) => (
+              {([] as AgentPerformance[]).map((row, i) => (
                 <tr key={row.agent.id}>
                   <td className="py-3">
                     <span className={`size-6 rounded-full flex items-center justify-center text-xs font-bold ${

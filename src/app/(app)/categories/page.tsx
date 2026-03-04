@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { DEFAULT_INTENTIONS, DEFAULT_LABELS } from "@/lib/constants";
+import { useLabels } from "@/hooks/useLabels";
+import { DEFAULT_INTENTIONS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
@@ -13,7 +14,25 @@ import { toast } from "sonner";
 
 export default function CategoriesPage() {
   const [intentions] = useState(DEFAULT_INTENTIONS);
-  const [labels] = useState(DEFAULT_LABELS);
+  const { labels, isLoading: labelsLoading, mutate: mutateLabels } = useLabels();
+  const [newLabel, setNewLabel] = useState("");
+
+  const handleAddLabel = async () => {
+    if (!newLabel.trim()) return;
+    try {
+      const res = await fetch('/api/chatwoot/labels', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newLabel.trim() }),
+      });
+      if (!res.ok) throw new Error('Erreur');
+      setNewLabel("");
+      mutateLabels();
+      toast.success("Label créé");
+    } catch {
+      toast.error("Erreur lors de la création du label");
+    }
+  };
 
   return (
     <div className="p-4 lg:p-8 space-y-8 pb-24 lg:pb-8">
@@ -98,23 +117,32 @@ export default function CategoriesPage() {
             Labels
           </h3>
           <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {labels.map((label) => (
-                <span
-                  key={label.id}
-                  className="px-3 py-1.5 rounded-full text-xs font-medium flex items-center gap-1.5"
-                  style={{ backgroundColor: `${label.color}15`, color: label.color }}
-                >
-                  {label.name}
-                  <button className="material-symbols-outlined text-[14px] hover:opacity-70" onClick={() => toast.info("Suppression de label — fonctionnalité bientôt disponible")}>close</button>
-                </span>
-              ))}
-            </div>
+            {labelsLoading ? (
+              <p className="text-sm text-slate-400">Chargement...</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {labels.map((label) => (
+                  <span
+                    key={label.id}
+                    className="px-3 py-1.5 rounded-full text-xs font-medium"
+                    style={{ backgroundColor: `${label.color}15`, color: label.color }}
+                  >
+                    {label.name}
+                  </span>
+                ))}
+              </div>
+            )}
             <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
               <Label className="text-xs text-slate-400">Nouveau label</Label>
               <div className="flex gap-2 mt-1">
-                <Input placeholder="Nom du label" className="flex-1 text-sm" />
-                <Button variant="outline" size="sm" onClick={() => toast.info("Ajout de label — fonctionnalité bientôt disponible")}>
+                <Input
+                  placeholder="Nom du label"
+                  className="flex-1 text-sm"
+                  value={newLabel}
+                  onChange={(e) => setNewLabel(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddLabel()}
+                />
+                <Button variant="outline" size="sm" onClick={handleAddLabel}>
                   <span className="material-symbols-outlined text-lg">add</span>
                 </Button>
               </div>

@@ -6,15 +6,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { MOCK_USERS } from "@/lib/mock-data";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import type { User } from "@/lib/types";
 
 export default function SettingsPage() {
+  const { user } = useAuth();
+  const TEAM_MEMBERS: User[] = user ? [{ ...user, isActive: true }] : [];
   return (
     <div className="p-4 lg:p-8 space-y-6 pb-24 lg:pb-8">
       <div>
         <h2 className="text-3xl font-black tracking-tight">Paramètres</h2>
-        <p className="text-slate-500 mt-1">Configuration de votre espace 2HL CRM.</p>
+        <p className="text-slate-500 mt-1">Configuration de votre espace NEXIA CRM.</p>
       </div>
 
       <Tabs defaultValue="company" className="space-y-6">
@@ -41,7 +44,7 @@ export default function SettingsPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Nom de l&apos;entreprise</Label>
-                <Input defaultValue="2HL Group" className="mt-1" />
+                <Input defaultValue="NEXIA" className="mt-1" />
               </div>
               <div>
                 <Label>Couleur principale</Label>
@@ -85,7 +88,7 @@ export default function SettingsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {MOCK_USERS.map((u) => (
+                  {TEAM_MEMBERS.map((u) => (
                     <tr key={u.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -126,7 +129,7 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               { name: "WhatsApp", icon: "chat", bgClass: "bg-green-100 dark:bg-green-900/30 text-green-600", connected: true, account: "+226 70 XX XX XX" },
-              { name: "Messenger", icon: "message", bgClass: "bg-blue-100 dark:bg-blue-900/30 text-blue-600", connected: true, account: "Page 2HL Group" },
+              { name: "Messenger", icon: "message", bgClass: "bg-blue-100 dark:bg-blue-900/30 text-blue-600", connected: true, account: "Page NEXIA" },
               { name: "Commentaires FB", icon: "comment", bgClass: "bg-blue-100 dark:bg-blue-900/30 text-blue-600", connected: false, account: "" },
             ].map((channel) => (
               <div key={channel.name} className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
