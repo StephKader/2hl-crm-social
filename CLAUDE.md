@@ -39,7 +39,7 @@ Navigation items in `src/lib/constants.ts` (`NAV_ITEMS`) define which roles can 
 The `(app)/layout.tsx` renders:
 - **Desktop (≥1280px)**: Sidebar (left) + Header (top) + content area. Sidebar collapses to icons on conversation **detail** pages only (`/conversations/[id]`).
 - **Mobile (<1280px)**: Header (top) + content + MobileBottomNav (fixed bottom). Breakpoint detection via `useMediaQuery("(min-width: 1280px)")` custom hook.
-- **Header visibility**: Hidden only on conversation detail pages (which have their own chat header). The conversation list page (`/conversations`) keeps the main Header to avoid layout shifts on mobile.
+- **Header visibility**: Hidden only on conversation detail pages (which have their own chat header). The conversation list page (`/conversations`) keeps the main Header from the layout. **Important**: Individual pages must NOT render their own `<Header />` — it is always provided by the layout.
 
 The `MobileBottomNav` shows the first 3 nav items as direct tabs. If the role has more items, a "Plus" button opens a popover menu listing all remaining pages (e.g., Catégories + Rapports for Patron, + Paramètres for Admin).
 
@@ -67,6 +67,10 @@ Conversation detail page (`conversations/[id]/page.tsx`) manages its own layout 
 | `src/contexts/AuthContext.tsx` | Auth context with role switching (demo mode) |
 | `src/app/globals.css` | CSS variables for light/dark themes, custom utilities (scrollbar, safe-area) |
 | `src/hooks/useMediaQuery.ts` | Responsive breakpoint hooks (useMediaQuery, useIsMobile, useIsDesktop) |
+
+## Chatwoot Integration
+
+This frontend is designed to connect to **Chatwoot** as its backend. See `docs/CHATWOOT_INTEGRATION.md` for the full integration guide covering: architecture, authentication, data model mapping, API service layer, page-by-page integration plan, WebSocket real-time, and 6-phase migration strategy.
 
 ## Stack
 

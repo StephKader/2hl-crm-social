@@ -6,7 +6,6 @@ import { Conversation } from "@/lib/types";
 import { MOCK_CONVERSATIONS } from "@/lib/mock-data";
 import { ConversationList } from "@/components/conversations/ConversationList";
 import { EmptyState } from "@/components/conversations/EmptyState";
-import { Header } from "@/components/layout/Header";
 
 export default function ConversationsPage() {
   const router = useRouter();
@@ -23,7 +22,6 @@ export default function ConversationsPage() {
           onSelect={handleSelect}
         />
         <div className="hidden lg:flex flex-1 flex-col">
-          <Header />
           <EmptyState />
         </div>
       </div>
