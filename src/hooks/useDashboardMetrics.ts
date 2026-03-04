@@ -1,6 +1,10 @@
 import useSWR from 'swr';
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
+const fetcher = (url: string) =>
+  fetch(url).then((r) => {
+    if (!r.ok) return [];
+    return r.json().catch(() => []);
+  });
 
 function getPeriodTimestamps(period: 'today' | 'week' | 'month') {
   const now = new Date();
@@ -27,19 +31,27 @@ export function useDashboardMetrics(period: 'today' | 'week' | 'month' = 'today'
   const { since, until } = getPeriodTimestamps(period);
   const baseUrl = `/api/chatwoot/reports?since=${since}&until=${until}&type=account`;
 
-  const { data: convs } = useSWR(`${baseUrl}&metric=conversations_count`, fetcher);
-  const { data: responseTime } = useSWR(`${baseUrl}&metric=avg_first_response_time`, fetcher);
-  const { data: resolutions } = useSWR(`${baseUrl}&metric=resolutions_count`, fetcher);
+  const { data: convs } = useSWR(`${baseUrl}&metric=conversations_count`, fetcher, {
+    onErrorRetry: () => {},
+  });
+  const { data: responseTime } = useSWR(`${baseUrl}&metric=avg_first_response_time`, fetcher, {
+    onErrorRetry: () => {},
+  });
+  const { data: resolutions } = useSWR(`${baseUrl}&metric=resolutions_count`, fetcher, {
+    onErrorRetry: () => {},
+  });
 
-  const totalConvs = (convs || []).reduce(
+  const safeArray = (d: unknown) => (Array.isArray(d) ? d : []);
+
+  const totalConvs = safeArray(convs).reduce(
     (sum: number, d: { value: string }) => sum + parseInt(d.value || '0'),
     0
   );
-  const avgRT = (responseTime || []).reduce(
+  const avgRT = safeArray(responseTime).reduce(
     (sum: number, d: { value: string }) => sum + parseFloat(d.value || '0'),
     0
   );
-  const totalResolutions = (resolutions || []).reduce(
+  const totalResolutions = safeArray(resolutions).reduce(
     (sum: number, d: { value: string }) => sum + parseInt(d.value || '0'),
     0
   );
@@ -48,6 +60,6 @@ export function useDashboardMetrics(period: 'today' | 'week' | 'month' = 'today'
     activeConversations: totalConvs,
     avgResponseTime: avgRT > 0 ? `${Math.round(avgRT / 60)} min` : '--',
     resolvedToday: totalResolutions,
-    conversationsSeries: convs || [],
+    conversationsSeries: safeArray(convs),
   };
 }

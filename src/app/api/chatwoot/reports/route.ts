@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
   } catch (err: unknown) {
     if (err instanceof Error && err.message === 'NOT_AUTHENTICATED')
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    // Reports API might not exist on this Chatwoot version — return empty array
+    return NextResponse.json([]);
   }
 }
