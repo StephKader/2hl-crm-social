@@ -125,13 +125,13 @@ export default function SettingsPage() {
         <TabsContent value="channels">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
-              { name: "WhatsApp", icon: "chat", color: "green", connected: true, account: "+226 70 XX XX XX" },
-              { name: "Messenger", icon: "message", color: "blue", connected: true, account: "Page 2HL Group" },
-              { name: "Commentaires FB", icon: "comment", color: "blue", connected: false, account: "" },
+              { name: "WhatsApp", icon: "chat", bgClass: "bg-green-100 dark:bg-green-900/30 text-green-600", connected: true, account: "+226 70 XX XX XX" },
+              { name: "Messenger", icon: "message", bgClass: "bg-blue-100 dark:bg-blue-900/30 text-blue-600", connected: true, account: "Page 2HL Group" },
+              { name: "Commentaires FB", icon: "comment", bgClass: "bg-blue-100 dark:bg-blue-900/30 text-blue-600", connected: false, account: "" },
             ].map((channel) => (
               <div key={channel.name} className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className={`size-10 rounded-lg bg-${channel.color}-100 dark:bg-${channel.color}-900/30 text-${channel.color}-600 flex items-center justify-center`}>
+                  <div className={`size-10 rounded-lg flex items-center justify-center ${channel.bgClass}`}>
                     <span className="material-symbols-outlined">{channel.icon}</span>
                   </div>
                   <div>

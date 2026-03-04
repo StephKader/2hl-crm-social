@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line,
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { MOCK_AGENT_PERFORMANCE } from "@/lib/mock-data";
 import { toast } from "sonner";
 
-const CONVERSATION_DATA = [
+const BASE_CONVERSATION_DATA = [
   { day: "Lun", conversations: 45 },
   { day: "Mar", conversations: 62 },
   { day: "Mer", conversations: 58 },
@@ -19,13 +19,7 @@ const CONVERSATION_DATA = [
   { day: "Dim", conversations: 15 },
 ];
 
-const CHANNEL_DATA = [
-  { name: "WhatsApp", value: 55, color: "#22c55e" },
-  { name: "Messenger", value: 35, color: "#3b82f6" },
-  { name: "Facebook", value: 10, color: "#1d4ed8" },
-];
-
-const RESPONSE_TIME_DATA = [
+const BASE_RESPONSE_TIME = [
   { day: "Lun", time: 4.5 },
   { day: "Mar", time: 3.8 },
   { day: "Mer", time: 5.2 },
@@ -35,10 +29,59 @@ const RESPONSE_TIME_DATA = [
   { day: "Dim", time: 8.0 },
 ];
 
+const CHANNEL_DATA_BY_PERIOD: Record<string, { name: string; value: number; color: string }[]> = {
+  today: [
+    { name: "WhatsApp", value: 60, color: "#22c55e" },
+    { name: "Messenger", value: 30, color: "#3b82f6" },
+    { name: "Facebook", value: 10, color: "#1d4ed8" },
+  ],
+  week: [
+    { name: "WhatsApp", value: 55, color: "#22c55e" },
+    { name: "Messenger", value: 35, color: "#3b82f6" },
+    { name: "Facebook", value: 10, color: "#1d4ed8" },
+  ],
+  month: [
+    { name: "WhatsApp", value: 50, color: "#22c55e" },
+    { name: "Messenger", value: 38, color: "#3b82f6" },
+    { name: "Facebook", value: 12, color: "#1d4ed8" },
+  ],
+  custom: [
+    { name: "WhatsApp", value: 52, color: "#22c55e" },
+    { name: "Messenger", value: 36, color: "#3b82f6" },
+    { name: "Facebook", value: 12, color: "#1d4ed8" },
+  ],
+};
+
+const PERIOD_MULTIPLIER: Record<string, number> = {
+  today: 0.15,
+  week: 1,
+  month: 4.2,
+  custom: 2.5,
+};
+
 type Period = "today" | "week" | "month" | "custom";
 
 export default function ReportsPage() {
   const [period, setPeriod] = useState<Period>("week");
+
+  const conversationData = useMemo(() => {
+    const mult = PERIOD_MULTIPLIER[period];
+    return BASE_CONVERSATION_DATA.map((d) => ({
+      ...d,
+      conversations: Math.round(d.conversations * mult),
+    }));
+  }, [period]);
+
+  const responseTimeData = useMemo(() => {
+    const offsets: Record<string, number> = { today: -1.5, week: 0, month: 0.8, custom: 0.3 };
+    const offset = offsets[period];
+    return BASE_RESPONSE_TIME.map((d) => ({
+      ...d,
+      time: Math.max(1, +(d.time + offset).toFixed(1)),
+    }));
+  }, [period]);
+
+  const channelData = CHANNEL_DATA_BY_PERIOD[period];
 
   const periods: { label: string; value: Period }[] = [
     { label: "Aujourd'hui", value: "today" },
@@ -94,12 +137,12 @@ export default function ReportsPage() {
           </h3>
           <div className="h-[250px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={CONVERSATION_DATA}>
+              <BarChart data={conversationData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="day" fontSize={12} />
                 <YAxis fontSize={12} />
                 <Tooltip />
-                <Bar dataKey="conversations" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="conversations" fill="#2563eb" radius={[4, 4, 0, 0]} isAnimationActive />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -114,8 +157,8 @@ export default function ReportsPage() {
           <div className="h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={CHANNEL_DATA} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="value">
-                  {CHANNEL_DATA.map((entry, i) => (
+                <Pie data={channelData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="value" isAnimationActive>
+                  {channelData.map((entry, i) => (
                     <Cell key={`cell-${i}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -124,7 +167,7 @@ export default function ReportsPage() {
             </ResponsiveContainer>
           </div>
           <div className="flex justify-center gap-6 mt-2">
-            {CHANNEL_DATA.map((d) => (
+            {channelData.map((d) => (
               <div key={d.name} className="flex items-center gap-2">
                 <span className="size-3 rounded-full" style={{ backgroundColor: d.color }}></span>
                 <span className="text-xs font-semibold">{d.name} ({d.value}%)</span>
@@ -141,12 +184,12 @@ export default function ReportsPage() {
           </h3>
           <div className="h-[250px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={RESPONSE_TIME_DATA}>
+              <LineChart data={responseTimeData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis dataKey="day" fontSize={12} />
                 <YAxis fontSize={12} />
                 <Tooltip />
-                <Line type="monotone" dataKey="time" stroke="#2563eb" strokeWidth={2} dot={{ fill: "#2563eb" }} />
+                <Line type="monotone" dataKey="time" stroke="#2563eb" strokeWidth={2} dot={{ fill: "#2563eb" }} isAnimationActive />
               </LineChart>
             </ResponsiveContainer>
           </div>

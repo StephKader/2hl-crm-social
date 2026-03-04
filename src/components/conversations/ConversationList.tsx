@@ -183,8 +183,14 @@ export function ConversationList({ conversations, activeConversationId, onSelect
           />
         ))}
         {filtered.length === 0 && (
-          <div className="p-8 text-center text-slate-400 text-sm">
-            Aucune conversation trouvée
+          <div className="p-8 flex flex-col items-center text-center gap-3">
+            <span className="material-symbols-outlined text-4xl text-slate-300 dark:text-slate-600">forum</span>
+            <p className="text-sm font-medium text-slate-500">Aucune conversation trouvée</p>
+            {hasActiveFilters && (
+              <button onClick={clearFilters} className="text-xs text-primary hover:underline">
+                Réinitialiser les filtres
+              </button>
+            )}
           </div>
         )}
       </div>
